@@ -25,6 +25,13 @@
 Heavily modified from https://github.com/hadim/pygraphml/blob/master/pygraphml/graphml_parser.py
 licensed under BSD 3 Part: https://github.com/hadim/pygraphml/blob/master/LICENSE
 
+@update:
+    1. 增加点/边label字段定义，适配neo4j导出数据格式
+    2. 去掉点label字段前缀冒号(:)，由于目标库不支持多label，这里多label会当一个label处理
+
+@todo:
+    1. 部分neo4j导出文件标题key定义不全，导致填map时出现'KeyError(xxx)'异常，需要在原数据文件添加key定义(属性名)
+
 '''
 
 __all__ = []
@@ -40,6 +47,8 @@ import csv
 
 import xml.etree.ElementTree as etree
 
+EDGE_LABEL = "label"
+VERTEX_LABEL = "labels"
 
 class GraphML2CSV:
 
@@ -117,7 +126,7 @@ class GraphML2CSV:
                         if GraphML2CSV.graphml_tag(elem.tag) == GraphML2CSV.graphml_tag('key'):
 
                             # Assume the labelV is the vertex label, if specified
-                            if elem.attrib['id'] != 'labelV' and elem.attrib['id'] != 'labelE':
+                            if elem.attrib['id'] != VERTEX_LABEL and elem.attrib['id'] != EDGE_LABEL:
                                 if not 'for' in elem.attrib or elem.attrib['for'] == 'node':
                                     vtx_dict[elem.attrib['id']] = elem.attrib['id'] + \
                                         ":"+elem.attrib['attr.type']
@@ -149,9 +158,9 @@ class GraphML2CSV:
                                 att_val = GraphML2CSV.py_compat_str(encoding,
                                                                     data.attrib.get('key'))
 
-                                if att_val == "labelV":
+                                if att_val == VERTEX_LABEL:
                                     node_d["~label"] = GraphML2CSV.py_compat_str(encoding,
-                                                                                 data.text)
+                                            data.text if data.text[0] != ':' else data.text[1:])
                                     has_label = True
                                 else:
                                     node_d[vtx_dict[att_val]] = GraphML2CSV.py_compat_str(encoding,
@@ -187,7 +196,7 @@ class GraphML2CSV:
                                 att_val = GraphML2CSV.py_compat_str(encoding,
                                                                     data.attrib.get('key'))
 
-                                if att_val == "labelE":
+                                if att_val == EDGE_LABEL:
                                     edge_d["~label"] = GraphML2CSV.py_compat_str(encoding,
                                                                                  data.text)
                                     has_label = True
