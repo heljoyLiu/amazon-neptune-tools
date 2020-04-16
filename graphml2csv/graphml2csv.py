@@ -26,6 +26,10 @@ Heavily modified from https://github.com/hadim/pygraphml/blob/master/pygraphml/g
 licensed under BSD 3 Part: https://github.com/hadim/pygraphml/blob/master/LICENSE
 
 @update:
+    2020-04-16
+    解析时去掉点(node)的ID字段前缀'n'，边(edge)的ID字段前缀'e'。适配neo4j导出ID字段long类型要求
+
+    Init
     1. 增加点/边label字段定义，适配neo4j导出数据格式
     2. 去掉点label字段前缀冒号(:)，由于目标库不支持多label，这里多label会当一个label处理
 
@@ -147,7 +151,7 @@ class GraphML2CSV:
                             node_d = {}
 
                             if 'id' in elem.attrib:
-                                node_d["~id"] = elem.attrib['id']
+                                node_d["~id"] = elem.attrib['id'][1:] if elem.attrib['id'][0] == 'n' else elem.attrib['id']
                             else:
                                 # If the optional ID is not present, use the node count
                                 node_d["~id"] = node_cnt
@@ -186,11 +190,11 @@ class GraphML2CSV:
 
                             id = source + '_' + dest  # If the optional ID is not present, use the source_dest
                             if 'id' in elem.attrib:
-                                id = elem.attrib['id']
+                                id = elem.attrib['id'][1:] if elem.attrib['id'][0] == 'e' else elem.attrib['id']
 
                             edge_d["~id"] = id
-                            edge_d["~from"] = source
-                            edge_d["~to"] = dest
+                            edge_d["~from"] = source[1:] if source[0] == 'n' else source
+                            edge_d["~to"] = dest[1:] if dest[0] == 'n' else dest
 
                             for data in elem:
                                 att_val = GraphML2CSV.py_compat_str(encoding,
