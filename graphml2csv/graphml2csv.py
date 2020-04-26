@@ -70,6 +70,9 @@ class GraphML2CSV:
 
     @staticmethod
     def py_compat_str(encoding, data):
+        if data is None:
+            return None
+
         if sys.hexversion >= 0x3000000:
             return data.encode(encoding).decode('utf-8')
         else:
